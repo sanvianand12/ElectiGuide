@@ -1,248 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- 1. Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+<!-- 2. Leaflet JS (Must be before your custom script) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ElectiGuide | Your Interactive Voting Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>ElectiGuide</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/add-to-calendar-button-react@2" async defer></script>
     <style>
-        .accordion-content {
-            transition: max-height 0.3s ease-out, padding 0.3s ease;
-        }
+        body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #2d3436;
+    
+    /* Modern Pastel Mesh Gradient */
+    background: #eef2f3; /* Fallback */
+    background: radial-gradient(at 0% 0%, #dcfce7 0px, transparent 50%), /* Soft Mint */
+                radial-gradient(at 100% 0%, #e0e7ff 0px, transparent 50%), /* Soft Blue */
+                radial-gradient(at 100% 100%, #f3e8ff 0px, transparent 50%); /* Soft Purple */
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+        .main-wrapper { display: flex; max-width: 1100px; margin: 0 auto; gap: 20px; }
+        .steps-container { flex: 2; background: rgba(255, 255, 255, 0.45); padding: 30px; border-radius: 15px; border-left: 6px solid #8861e5; border-top: 2px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-height: 550px; }
+        .calendar-sidebar { flex: 1; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); height: fit-content; text-align: center; border-top: 5px solid #007bff; }
+        .step-content { display: none; }
+        .step-content.active { display: block; }
+        .progress-bar { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .step-indicator { width: 30px; height: 30px; border-radius: 50%; background: #ddd; text-align: center; line-height: 30px; font-weight: bold; }
+        .step-indicator.active { background: #007bff; color: white; }
+        .doc-item { display: block; background: #f1f3f5; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; }
+        #map { height: 300px; width: 100%; border-radius: 10px; margin-top: 15px; display: none; }
+        .candidate-card { border-left: 5px solid #007bff; background: #f8fbff; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #1a1c2c; color: white; cursor: pointer; font-weight: bold; margin-top: 15px; }
+        button:disabled { background: #ccc; }
+        .success-msg { color: #28a745; font-weight: bold; margin-top: 10px; text-align: center; display: none; }
+        .final-cta { background: #fff8e1; border: 2px dashed #ffc107; padding: 20px; border-radius: 10px; margin-top: 20px; text-align: center; }
+        /* We use 'section' or the specific ID to ensure this wins the CSS 'fight' */
+#assistant-card, .step-card, [class*="assistant"] {
+    background: rgba(235, 238, 255, 0.75) !important; /* A noticeable lavender-blue tint */
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(165, 180, 252, 0.4) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06) !important;
+    border-radius: 30px !important;
+}
     </style>
 </head>
-<body class="bg-slate-50 font-sans antialiased text-slate-900">
-
-    <!-- Navbar -->
-    <nav class="bg-blue-800 p-6 shadow-lg">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-white tracking-tight">🗳️ ElectiGuide</h1>
-            <span class="text-blue-100 text-sm font-medium bg-blue-700 px-3 py-1 rounded-full">2026 Election Portal</span>
+<body>
+    <!-- TOP NAVIGATION / HEADER -->
+<!-- TOP NAVIGATION / HEADER -->
+<header style="background: transparent; padding: 25px 50px; display: flex; justify-content: space-between; align-items: center; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    
+    <!-- Left Side: Clean Typography -->
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 4px 10px rgba(0,123,255,0.3);">
+            E
         </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <main class="max-w-4xl mx-auto mt-10 p-4">
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-            <div class="p-8 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50">
-                <h2 class="text-3xl font-extrabold text-slate-800">Your Election Roadmap</h2>
-                <p class="text-slate-500 mt-2 text-lg">Click each step to unlock interactive guides and checklists.</p>
-            </div>
-
-            <!-- Roadmap Accordion List -->
-            <div class="p-6 space-y-4">
-                {% for step in roadmap %}
-                <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all hover:border-blue-300">
-                    <!-- Header (The Button) -->
-                    <button onclick="toggleStep({{ step.id }})" class="w-full flex items-center p-6 text-left bg-white hover:bg-slate-50 focus:outline-none">
-                        <div class="flex-shrink-0">
-                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-700 font-bold text-lg">
-                                {{ step.id }}
-                            </div>
-                        </div>
-                        <div class="ml-6 flex-grow">
-                            <h3 class="text-xl font-bold text-slate-800">{{ step.task }}</h3>
-                            <p class="text-slate-500 text-sm mt-1">{{ step.status }}</p>
-                        </div>
-                        <!-- Arrow Icon -->
-                        <div class="text-slate-400 transition-transform duration-300" id="arrow-{{ step.id }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </button>
-
-                    <!-- Hidden Content Block -->
-                    <div id="content-{{ step.id }}" class="hidden bg-slate-50 p-8 border-t border-slate-100">
-                        
-                        <!-- Step 1: Eligibility Logic -->
-                        {% if step.id == 1 %}
-                        <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-inner">
-                            <h4 class="font-bold text-blue-800 mb-4 flex items-center">
-                                <span class="mr-2">🔍</span> Quick Eligibility Quiz
-                            </h4>
-                            <div class="space-y-3">
-                                <label class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-blue-50 cursor-pointer">
-                                    <span class="text-slate-700">Are you 18 years or older?</span>
-                                    <input type="checkbox" class="quiz-check w-6 h-6 rounded text-blue-600" onclick="updateProgress()">
-                                </label>
-                                <label class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-blue-50 cursor-pointer">
-                                    <span class="text-slate-700">Are you a citizen of this country?</span>
-                                    <input type="checkbox" class="quiz-check w-6 h-6 rounded text-blue-600" onclick="updateProgress()">
-                                </label>
-                            </div>
-                            <!-- Progress Tracker -->
-                            <div class="mt-6">
-                                <div class="flex justify-between text-xs font-bold text-blue-600 mb-2 uppercase tracking-wider">
-                                    <span>Readiness Score</span>
-                                    <span id="percent">0%</span>
-                                </div>
-                                <div class="w-full bg-slate-200 rounded-full h-3">
-                                    <div id="bar" class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Step 2: Registration Logic -->
-                        {% elif step.id == 2 %}
-                        <div class="bg-white p-6 rounded-xl border border-emerald-100 shadow-inner">
-                            <h4 class="font-bold text-emerald-800 mb-4 flex items-center">
-                                <span class="mr-2">📂</span> Required Document Checklist
-                            </h4>
-                            <div class="grid grid-cols-1 gap-3">
-                                <label class="flex items-center space-x-4 p-3 rounded-lg border border-slate-100 hover:bg-emerald-50 cursor-pointer">
-                                    <input type="checkbox" class="w-5 h-5 text-emerald-600">
-                                    <span class="text-slate-700">Valid Photo Identification (e.g., Driver's License)</span>
-                                </label>
-                                <label class="flex items-center space-x-4 p-3 rounded-lg border border-slate-100 hover:bg-emerald-50 cursor-pointer">
-                                    <input type="checkbox" class="w-5 h-5 text-emerald-600">
-                                    <span class="text-slate-700">Proof of Residence (Utility Bill/Lease agreement)</span>
-                                </label>
-                                <label class="flex items-center space-x-4 p-3 rounded-lg border border-slate-100 hover:bg-emerald-50 cursor-pointer">
-                                    <input type="checkbox" class="w-5 h-5 text-emerald-600">
-                                    <span class="text-slate-700">Social Security or National ID Number</span>
-                                </label>
-                            </div>
-                            <p class="mt-4 text-xs text-slate-400 italic font-medium">Tip: Scan these documents and keep them in a secure folder on your phone.</p>
-                        </div>
-
-                    
-                        <!-- Step 3: Research Logic -->
-{% elif step.id == 3 %}
-<div class="bg-white p-6 rounded-xl border border-purple-100 shadow-inner">
-    <h4 class="font-bold text-purple-800 mb-4 flex items-center">
-        <span class="mr-2">⚖️</span> Candidate Research Tools
-    </h4>
-    <div class="space-y-4">
-        <p class="text-xs text-slate-500 font-medium italic">Select a focus area to see top-rated candidates:</p>
-        
-        <!-- Interactive Topic Buttons -->
-        <div class="flex flex-wrap gap-2">
-            <button onclick="showCandidates('Education')" class="text-[10px] bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full font-bold hover:bg-purple-200 transition">Education</button>
-            <button onclick="showCandidates('Health')" class="text-[10px] bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full font-bold hover:bg-purple-200 transition">Health</button>
-            <button onclick="showCandidates('Economy')" class="text-[10px] bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full font-bold hover:bg-purple-200 transition">Economy</button>
-        </div>
-
-        <!-- Candidate Display Box -->
-        <div id="candidate-box" class="hidden space-y-3">
-            <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
-                <p id="focus-title" class="text-[10px] font-bold text-purple-900 uppercase tracking-widest mb-2"></p>
-                <ul id="candidate-list" class="space-y-2">
-                    <!-- Names will appear here -->
-                </ul>
-            </div>
+        <div>
+            <h1 style="margin: 0; font-size: 1.5em; font-weight: 800; color: #2d3436; letter-spacing: -0.5px;">
+                ELECTIGUIDE
+            </h1>
+            <p style="margin: 0; font-size: 0.75em; font-weight: 600; color: #636e72; text-transform: uppercase; letter-spacing: 1px;">
+                Here to Help
+            </p>
         </div>
     </div>
+
+    <!-- Right Side: Minimalist Tag -->
+    <div style="display: flex; align-items: center; gap: 10px; background: white; padding: 10px 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.03);">
+        <span style="display: inline-block; width: 8px; height: 8px; background-color: #d9534f; border-radius: 50%; box-shadow: 0 0 8px rgba(217,83,79,0.6);"></span>
+        <span style="font-weight: 700; color: #2d3436; font-size: 0.85em; letter-spacing: 0.5px;">
+            2026 ELECTIONS
+        </span>
+    </div>
+</header>
+<div class="main-wrapper">
+    <div class="steps-container">
+        <h2 style="color: #4f46e5; margin-top: 0;">ElectiGuide Assistant</h2>
+        <div class="progress-bar">
+            <div id="dot-1" class="step-indicator active">1</div>
+            <div id="dot-2" class="step-indicator">2</div>
+            <div id="dot-3" class="step-indicator">3</div>
+            <div id="dot-4" class="step-indicator">4</div>
+        </div>
+        
+
+        <!-- Step 1 -->
+        <div id="step-1" class="step-content active">
+            <h3>Step 1: Age Verification</h3>
+            <p>Please enter your age to begin.</p>
+            <input type="number" id="age-input" placeholder="Age" style="width:96%; padding:12px; border:1px solid #ddd; border-radius:8px;">
+            <button onclick="checkAge()">Continue</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="step-2" class="step-content">
+            <h3>Step 2: Document Checklist</h3>
+            <label class="doc-item"><input type="checkbox" class="chk"> Voter ID (EPIC)</label>
+            <label class="doc-item"><input type="checkbox" class="chk"> Aadhaar Card</label>
+            <label class="doc-item"><input type="checkbox" class="chk"> Election Slip</label>
+            <div id="good-to-go" class="success-msg">✅ You are all set and good to go!</div>
+            <button id="btn2" onclick="nextStep(3)" disabled>Next Step</button>
+        </div>
+
+        <!-- Step 3 -->
+        <div id="step-3" class="step-content">
+            <h3>Step 3: Polling Station</h3>
+            <p>Enter your PIN to see the nearest station.</p>
+            <input type="text" id="pin-input" placeholder="e.g. 560001" style="width:96%; padding:12px; border:1px solid #ddd; border-radius:8px;">
+            <button onclick="initLeafletMap()">Search Location</button>
+            <div id="map"></div>
+            <button id="next3" onclick="nextStep(4)" style="display:none; background:#28a745;">View Candidates</button>
+        </div>
+
+        <!-- Step 4 -->
+        <div id="step-4" class="step-content">
+            <h3>Step 4: Candidate Information</h3>
+            <div class="candidate-card">
+                <strong>Ramesh Kumar (Education & Tech)</strong>
+                <p>Manifesto: Enhancing public schools with AI labs and high-speed internet.</p>
+            </div>
+            <div class="candidate-card">
+                <strong>Sarah John (Urban Ecology)</strong>
+                <p>Manifesto: Expanding green cover and implementing advanced waste management.</p>
+            </div>
+
+            <div class="final-cta">
+                <h3 style="color: #e65100; margin-top: 0;">Cast your vote and make a difference! 🗳️</h3>
+                <p>Your voice is your power. Head to your polling station on May 15, 2026.</p>
+            </div>
+
+            <button onclick="location.reload()" style="background:#6c757d;">Start Over</button>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+   <!-- RIGHT SIDEBAR -->
+<div class="calendar-sidebar" style="background: transparent; box-shadow: none; padding: 0;">
+    
+    <!-- Card 1: Calendar (Blue Border) -->
+    <div class="info-card" style="border-left: 5px solid #007bff;">
+        <h3 style="margin: 0 0 10px 0; font-size: 1.1em;">Election Day</h3>
+        <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">May 15, 2026</p>
+        <a href="https://calendar.google.com/calendar/u/0/r/eventedit?text=Election+Day&dates=20260515T033000Z/20260515T123000Z" 
+           target="_blank" class="cal-btn">
+           <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" width="18px">
+           Add to Calendar
+        </a>
+    </div>
+
+    <!-- Card 2: Countdown (Red Border) -->
+    <div class="info-card" style="border-left: 5px solid #d9534f; margin-top: 15px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 1.1em;">Time Remaining</h3>
+        <div id="timer" style="font-size: 1.2em; font-weight: bold; color: #d9534f; margin: 5px 0;">
+            Calculating...
+        </div>
+        <p style="font-size: 0.75em; color: #888;">Until Polling Booths Open</p>
+    </div>
+
+    <!-- Card 3: Stats (Green Border) -->
+    <!-- Card 3: Stats (Clean Pie Chart) -->
+<div class="info-card" style="border-left: 5px solid #28a745; margin-top: 15px;">
+    <h3 style="margin: 0 0 15px 0; font-size: 1.1em; color: #333;">Voter Projection</h3>
+    
+    <div style="width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">
+        <svg width="140" height="140" viewBox="0 0 42 42" style="transform: rotate(-90deg); border-radius: 50%;">
+            <!-- Overall Base (Grey) -->
+            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#e6e6e6" stroke-width="6"></circle>
+            
+            <!-- Youth (Blue) - 40% of the circle area -->
+            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#1a1c2c" stroke-width="6" stroke-dasharray="40 60" stroke-dashoffset="0"></circle>
+            
+            <!-- Urban (Slate) - 35% of the circle area -->
+            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#4a5568" stroke-width="6" stroke-dasharray="35 65" stroke-dashoffset="-40"></circle>
+            
+            <!-- Rural (Coral/Peach) - 25% of the circle area -->
+            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ff7e67" stroke-width="6" stroke-dasharray="25 75" stroke-dashoffset="-75"></circle>
+        </svg>
+    </div>
+
+    <!-- Data Legend -->
+    <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75em; border-top: 1px solid #f8f9fa; padding-top: 10px;">
+        <div style="text-align: left;"><span style="color: #007bff;">●</span> Youth: <b>78%</b></div>
+        <div style="text-align: left;"><span style="color: #28a745;">●</span> Urban: <b>62%</b></div>
+        <div style="text-align: left;"><span style="color: #ffc107;">●</span> Rural: <b>55%</b></div>
+        <div style="text-align: left;"><span style="color: #6c757d;">●</span> Overall: <b>65%</b></div>
+    </div>
+</div>
 </div>
 
-<!-- Add this inside your <script> at the bottom -->
+<style>
+    /* Individual Card Styling */
+    .info-card {
+       
+        background: rgba(243, 246, 254, 0.6);
+        backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    
+    /* We'll use a slightly darker border so the edges are visible */
+    border: 1px solid rgba(165, 180, 252, 0.2);
+    
+    /* Add a "inner glow" to make it look premium, not flat */
+    box-shadow: 
+        inset 0 0 20px rgba(255, 255, 255, 0.3),
+        0 12px 40px rgba(0, 0, 0, 0.04);
+        
+    border-radius: 24px;
+    padding: 30px;
+        
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+
+    .cal-btn {
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 8px;
+        background: white; 
+        color: #3c4043; 
+        padding: 10px; 
+        border: 1px solid #dadce0;
+        border-radius: 6px; 
+        text-decoration: none; 
+        font-size: 13px; 
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+    .cal-btn:hover { background: rgba(238, 242, 255, 0.6); }
+</style>
+
 <script>
-    function showCandidates(topic) {
-        const box = document.getElementById('candidate-box');
-        const title = document.getElementById('focus-title');
-        const list = document.getElementById('candidate-list');
-        
-        box.classList.remove('hidden');
-        title.innerText = `Top Candidates: ${topic}`;
-        
-        // Data for candidates
-        const data = {
-            'Education': ['Prof. Ananya Singh - Digital Literacy Advocate', 'Dr. Robert Chen - Rural School Funding'],
-            'Health': ['Dr. Sarah Mehta - Mental Health Policy', 'James Wilson - Universal Care Specialist'],
-            'Economy': ['Elena Rodriguez - Small Business Growth', 'Mark Thorne - Youth Employment Specialist']
-        };
-        
-        // Clear old list and add new names
-        list.innerHTML = '';
-        data[topic].forEach(name => {
-            const li = document.createElement('li');
-            li.className = "text-xs text-slate-700 flex items-center bg-white p-2 rounded border border-slate-100 shadow-sm";
-            li.innerHTML = `<span class="mr-2 text-purple-500">👤</span> ${name}`;
-            list.appendChild(li);
+    // --- STEP LOGIC ---
+    function checkAge() {
+        if(document.getElementById('age-input').value >= 18) nextStep(2);
+        else alert("Must be 18+ to vote.");
+    }
+
+    document.addEventListener('change', function() {
+        const chks = document.querySelectorAll('.chk');
+        const allChecked = Array.from(chks).every(c => c.checked);
+        document.getElementById('good-to-go').style.display = allChecked ? "block" : "none";
+        document.getElementById('btn2').disabled = !allChecked;
+    });
+
+    function nextStep(n) {
+        document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+        document.getElementById('step-' + n).classList.add('active');
+        document.querySelectorAll('.step-indicator').forEach((dot, i) => {
+            if (i < n) dot.classList.add('active');
         });
     }
-</script>
 
-                        <!-- Step 4: Find Polling Place -->
-{% elif step.id == 4 %}
-<div class="bg-white p-6 rounded-xl border border-orange-100 shadow-inner">
-    <h4 class="font-bold text-orange-800 mb-4 flex items-center">
-        <span class="mr-2">📍</span> Find Your Station
-    </h4>
-    <div class="space-y-4">
-        <!-- The Form -->
-        <form method="GET" action="/" class="flex space-x-2">
-            <input type="text" name="pincode" value="{{ searched_pincode|default:'' }}" placeholder="Try 560001 or 560037" class="flex-grow p-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none">
-            <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-700 transition">Search</button>
-        </form>
+    // --- MAP LOGIC ---
+    let map; 
 
-        <!-- Display Results -->
-        {% if results %}
-            <div class="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                <p class="text-xs font-bold text-orange-800 mb-2 uppercase">Stations near {{ searched_pincode }}:</p>
-                <ul class="text-sm space-y-2">
-                    {% for station in results %}
-                        <li class="flex items-center text-slate-700">
-                            <span class="mr-2">🏠</span> {{ station }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% elif searched_pincode %}
-            <p class="text-xs text-red-500 italic mt-2">No stations found for this pincode. Try 560001!</p>
-        {% endif %}
-    </div>
-</div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %} <!-- THIS IS THE FIXED TAG -->
-            </div>
+    function initLeafletMap() {
+    const pin = document.getElementById('pin-input').value;
+    if(pin.length < 6) return alert("Enter a valid PIN");
 
-            <!-- Global Footer -->
-            <footer class="bg-slate-50 p-8 text-center border-t border-slate-100">
-                <p class="text-sm text-slate-400 font-semibold tracking-wide">© 2026 ELECTIGUIDE •</p>
-            </footer>
-        </div>
-    </main>
+    // 1. Force the container to be visible and have size
+    const mapDiv = document.getElementById('map');
+    mapDiv.style.display = "block";
+    mapDiv.style.height = "350px"; // Forced height
+    document.getElementById('next3').style.display = "block";
 
-    <!-- JavaScript Logic -->
-    <script>
-    function toggleStep(id) {
-        const content = document.getElementById(`content-${id}`);
-        const arrow = document.getElementById(`arrow-${id}`);
+    // 2. Check if Leaflet is actually loaded
+    if (typeof L === 'undefined') {
+        alert("Map library failed to load. Please check your internet connection.");
+        return;
+    }
+
+    // 3. Reset existing map to prevent "already initialized" errors
+    if (map) { map.remove(); }
+
+    // 4. Initialize with a slight delay so the browser 'sees' the div height
+    setTimeout(() => {
+        map = L.map('map').setView([12.9716, 77.5946], 14); 
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        L.marker([12.9716, 77.5946]).addTo(map)
+            .bindPopup(`<b>Polling Station Found</b><br>Location for PIN: ${pin}`)
+            .openPopup();
+
+        // 5. CRITICAL: Refresh the rendering engine
+        map.invalidateSize();
+    }, 250); 
+}
+    // --- LIVE COUNTDOWN LOGIC ---
+    const electionDate = new Date("May 15, 2026 07:00:00").getTime();
+    setInterval(function() {
+        const now = new Date().getTime();
+        const distance = electionDate - now;
         
-        if (content.classList.contains('hidden')) {
-            // Close others
-            document.querySelectorAll('[id^="content-"]').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('[id^="arrow-"]').forEach(el => el.style.transform = "rotate(0deg)");
-
-            // Open this one
-            content.classList.remove('hidden');
-            arrow.style.transform = "rotate(180deg)";
-        } else {
-            content.classList.add('hidden');
-            arrow.style.transform = "rotate(0deg)";
-        }
-    }
-
-    // NEW: This runs automatically when the page finishes loading
-    window.onload = function() {
-        const stepToOpen = "{{ open_step }}";
-        if (stepToOpen && stepToOpen !== "None") {
-            toggleStep(stepToOpen);
-            // Optional: Scroll to the open step smoothly
-            document.getElementById(`content-${stepToOpen}`).scrollIntoView({ behavior: 'smooth' });
-        }
-    };
-
-    function updateProgress() {
-        const checkedCount = document.querySelectorAll('.quiz-check:checked').length;
-        const totalCount = document.querySelectorAll('.quiz-check').length;
-        const percentage = (checkedCount / totalCount) * 100;
-        document.getElementById('bar').style.width = percentage + "%";
-        document.getElementById('percent').innerText = Math.round(percentage) + "%";
-    }
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        
+        document.getElementById("timer").innerHTML = `${days}d ${hours}h ${minutes}m`;
+    }, 1000);
 </script>
+<!-- FAQ SECTION -->
+<!-- MAIN CONTENT ENDS HERE -->
+</div> <!-- This closing div should be the end of your main container -->
+
+<!-- FAQ SECTION - PLACED AT THE VERY BOTTOM -->
+<section id="faq-section" style="width: 100%; background-color: rgba(255, 255, 255, 0.3); padding: 60px 0; margin-top: 50px; border-top: 1px solid #eee;">
+    <div style="max-width: 1000px; margin: 0 auto; padding: 0 20px;">
+        <h2 style="text-align: center; color: #333; margin-bottom: 40px; font-family: sans-serif; font-size: 2em;">Frequently Asked Questions</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            
+            <!-- Question 1 -->
+            <div class="faq-card">
+                <details>
+                    <summary>What documents do I need to carry to the booth?</summary>
+                    <p>While the EPIC card is preferred, you can use Aadhaar, PAN, or a Driving License.</p>
+                </details>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="faq-card">
+                <details>
+                    <summary>How do I find my serial number?</summary>
+                    <p>Check the electoral roll for your booth after locating it on our map.</p>
+                </details>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="faq-card">
+                <details>
+                    <summary>Can I vote if I recently moved?</summary>
+                    <p>You must be registered at your current residence to vote there.</p>
+                </details>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="faq-card">
+                <details>
+                    <summary>Is there an AI assistant for complaints?</summary>
+                    <p>Yes, our system uses AI to deduplicate and prioritize municipal issues.</p>
+                </details>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<style>
+    .faq-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #efefef;
+    }
+    summary {
+        padding: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: sans-serif;
+    }
+    summary::after {
+        content: '+';
+        color: #007bff;
+        font-size: 1.4em;
+    }
+    details[open] summary::after {
+        content: '−';
+    }
+    details p {
+        padding: 0 25px 25px 25px;
+        color: #666;
+        font-family: sans-serif;
+        line-height: 1.6;
+    }
+</style>
 </body>
 </html>
