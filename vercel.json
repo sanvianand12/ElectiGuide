@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "ElectiGuide/wsgi.py",
+      "src": "core/wsgi.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "ElectiGuide/wsgi.py"
+      "dest": "core/wsgi.py"
     }
   ]
 }
