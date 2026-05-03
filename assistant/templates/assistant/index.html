@@ -355,6 +355,61 @@
 
         </div>
     </div>
+    <!-- Combined Action Dashboard -->
+<div class="dashboard-grid" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 40px 0;">
+
+    <!-- Left Column: Comparison Engine -->
+    <section id="comparison-engine" style="flex: 1; min-width: 350px; padding: 25px; background: #121212; border-radius: 15px; border: 1px solid #E0B0FF; color: white;">
+        <h2 style="color: #E0B0FF; text-align: center; margin-bottom: 20px;">📊 Candidate Comparison</h2>
+        
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+            <select id="candidate1" style="width: 40%; padding: 8px; border-radius: 5px; background: #2a2a2a; color: white; border: 1px solid #E0B0FF;">
+                <option value="A">Candidate A</option>
+                <option value="B">Candidate B</option>
+            </select>
+            <span style="align-self: center;">VS</span>
+            <select id="candidate2" style="width: 40%; padding: 8px; border-radius: 5px; background: #2a2a2a; color: white; border: 1px solid #E0B0FF;">
+                <option value="B">Candidate B</option>
+                <option value="A">Candidate A</option>
+            </select>
+        </div>
+        <button onclick="compareCandidates()" style="width: 100%; padding: 10px; background: #E0B0FF; color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">Compare</button>
+
+        <table id="comparisonTable" style="width: 100%; border-collapse: collapse; display: none; font-size: 0.9em;">
+            <thead>
+                <tr style="border-bottom: 2px solid #E0B0FF;">
+                    <th style="padding: 10px; text-align: left;">Issue</th>
+                    <th id="nameHeader1" style="color: #E0B0FF;">C1</th>
+                    <th id="nameHeader2" style="color: #E0B0FF;">C2</th>
+                </tr>
+            </thead>
+            <tbody id="comparisonBody"></tbody>
+        </table>
+    </section>
+
+    <!-- Right Column: Voter Checklist -->
+    <section id="voter-checklist" style="flex: 1; min-width: 350px; padding: 25px; background: #121212; border-radius: 15px; border: 1px solid #E0B0FF; color: white;">
+        <h2 style="color: #E0B0FF; text-align: center; margin-bottom: 20px;">✅ Readiness Tracker</h2>
+        <div style="background: #1a1a1a; padding: 15px; border-radius: 10px;">
+            <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="check1" style="accent-color: #E0B0FF;">
+                <label for="check1" style="font-size: 0.9em;">Verified Registration</label>
+            </div>
+            <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="check2" style="accent-color: #E0B0FF;">
+                <label for="check2" style="font-size: 0.9em;">Located Polling Station</label>
+            </div>
+            <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="check3" style="accent-color: #E0B0FF;">
+                <label for="check3" style="font-size: 0.9em;">Reviewed Manifestos</label>
+            </div>
+            
+            <button onclick="getAITip()" style="width: 100%; padding: 10px; background: transparent; color: #E0B0FF; border: 1px solid #E0B0FF; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px;">Get AI Tip</button>
+            <div id="ai-tip-output" style="margin-top: 10px; padding: 8px; font-size: 0.85em; color: #E0B0FF; display: none; border-left: 2px solid #E0B0FF;"></div>
+        </div>
+    </section>
+
+</div>
 </section>
 
 <style>
@@ -389,5 +444,52 @@
         line-height: 1.6;
     }
 </style>
+<script>
+function compareCandidates() {
+    const c1 = document.getElementById('candidate1').value;
+    const c2 = document.getElementById('candidate2').value;
+    const table = document.getElementById('comparisonTable');
+    const body = document.getElementById('comparisonBody');
+    
+    // Update Headers
+    document.getElementById('nameHeader1').innerText = "Candidate " + c1;
+    document.getElementById('nameHeader2').innerText = "Candidate " + c2;
+
+    // Sample Data - You can prompt-engineer these descriptions later!
+    const data = {
+        'Economy': { 'A': 'Focuses on tax cuts for small businesses.', 'B': 'Proposes increased minimum wage and infrastructure spending.' },
+        'Education': { 'A': 'Promotes vocational training and school choice.', 'B': 'Advocates for tuition-free public universities.' },
+        'Healthcare': { 'A': 'Focuses on private insurance competition.', 'B': 'Pushes for a universal public healthcare option.' }
+    };
+
+    body.innerHTML = ''; // Clear previous comparison
+
+    for (const [issue, stances] of Object.entries(data)) {
+        let row = `<tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 15px; font-weight: bold;">${issue}</td>
+            <td style="padding: 15px;">${stances[c1]}</td>
+            <td style="padding: 15px;">${stances[c2]}</td>
+        </tr>`;
+        body.innerHTML += row;
+    }
+
+    table.style.display = 'table'; // Show the table
+}
+function getAITip() {
+    const output = document.getElementById('ai-tip-output');
+    const tips = [
+        "ElectiGuide Tip: Researching early prevents last-minute confusion. Focus on the issues that affect your daily life most!",
+        "Pro Tip: Check your polling station hours 24 hours before the election to avoid long queues.",
+        "Quick Fact: You can often bring a 'cheat sheet' of your chosen candidates into the booth in many regions!",
+        "Strategy: Use the ElectiGuide Comparison Engine to finalize your stance on economic policies today."
+    ];
+    
+    // Pick a random tip
+    const randomTip = tips[Math.floor(Math.random() * tips.length)];
+    
+    output.innerText = randomTip;
+    output.style.display = 'block';
+}
+</script>
 </body>
 </html>
